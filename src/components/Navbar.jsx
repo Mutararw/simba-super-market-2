@@ -1,17 +1,44 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, Sun, Moon, Languages, Menu, X } from 'lucide-react'
+import { Search, ShoppingCart, Sun, Moon, Languages, Menu, X, MapPin, UserRound, LogOut } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 
-const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery }) => {
+const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery, user, onAuthRequest, onSignOut }) => {
   const { cartCount } = useCart()
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const translations = {
-    en: { search: 'Search products...', home: 'Home', cart: 'Cart', checkout: 'Checkout' },
-    fr: { search: 'Rechercher...', home: 'Accueil', cart: 'Panier', checkout: 'Paiement' },
-    kn: { search: 'Shaka ibicuruzwa...', home: 'Ahabanza', cart: 'Ikarita', checkout: 'Kwishura' }
+    en: {
+      search: 'Search products...',
+      home: 'Home',
+      cart: 'Cart',
+      checkout: 'Checkout',
+      signIn: 'Sign In',
+      signOut: 'Sign Out',
+      deliver: 'Deliver to',
+      location: 'Kigali City Center'
+    },
+    fr: {
+      search: 'Rechercher...',
+      home: 'Accueil',
+      cart: 'Panier',
+      checkout: 'Paiement',
+      signIn: 'Se connecter',
+      signOut: 'Se deconnecter',
+      deliver: 'Livrer a',
+      location: 'Centre de Kigali'
+    },
+    kn: {
+      search: 'Shaka ibicuruzwa...',
+      home: 'Ahabanza',
+      cart: 'Ikarita',
+      checkout: 'Kwishura',
+      signIn: 'Injira',
+      signOut: 'Sohoka',
+      deliver: 'Ohereza kuri',
+      location: 'Hagati ya Kigali'
+    }
   }
 
   const t = translations[lang]
@@ -22,15 +49,25 @@ const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery
   ]
 
   return (
-    <nav className="navbar glass sticky-top">
+    <nav className="navbar">
       <div className="container navbar-shell">
+
+        {/* Brand */}
         <Link to="/" className="brand-mark" onClick={() => setIsMenuOpen(false)}>
           <div className="brand-logo">S</div>
-          <span className="brand-text">
-            SIMBA <span>2.0</span>
-          </span>
+          <span className="brand-text">simba</span>
         </Link>
 
+        {/* Delivery Location */}
+        <button className="delivery-pill desktop-only">
+          <MapPin size={16} color="#5d3ebc" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
+            <span style={{ fontSize: '0.7rem', color: '#555', textTransform: 'uppercase', fontWeight: 600 }}>{t.deliver}</span>
+            <span style={{ fontSize: '0.83rem', fontWeight: 700, color: '#111' }}>{t.location}</span>
+          </div>
+        </button>
+
+        {/* Search */}
         <form
           className="search-bar"
           onSubmit={(e) => {
@@ -39,7 +76,7 @@ const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery
             setIsMenuOpen(false)
           }}
         >
-          <Search size={18} />
+          <Search size={18} color="#888" />
           <input
             type="text"
             value={searchQuery}
@@ -48,46 +85,88 @@ const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery
           />
         </form>
 
-        <div className="nav-links desktop-only">
-          {navItems.map((item) => (
-            <Link key={item.to} to={item.to}>
-              {item.label}
-            </Link>
-          ))}
-        </div>
+        {/* Actions */}
+        <div className="top-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
 
-        <div className="nav-actions">
-          <button onClick={toggleTheme} className="nav-btn" title="Toggle Theme">
-            {theme === 'light' ? <Moon size={22} /> : <Sun size={22} />}
-          </button>
-
-          <button className="nav-btn nav-cart-btn" onClick={() => navigate('/cart')} title={t.cart}>
-            <ShoppingCart size={22} />
-            {cartCount > 0 && (
-              <span className="badge cart-count-badge">
-                {cartCount}
-              </span>
-            )}
-          </button>
-
-          <button className="nav-btn lang-btn" onClick={() => setLang(lang === 'en' ? 'fr' : lang === 'fr' ? 'kn' : 'en')}>
-            <Languages size={22} />
+          {/* Language */}
+          <button
+            className="nav-btn lang-btn desktop-only"
+            onClick={() => setLang(lang === 'en' ? 'fr' : lang === 'fr' ? 'kn' : 'en')}
+            title="Switch language"
+          >
+            <Languages size={17} />
             <span>{lang}</span>
           </button>
 
-          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle navigation menu">
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {/* Theme toggle */}
+          <button
+            className="nav-btn desktop-only"
+            onClick={toggleTheme}
+            title="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
+          {/* Sign In / User */}
+          {user ? (
+            <>
+              <button className="signin-btn" onClick={() => navigate('/checkout')}>
+                <UserRound size={16} />
+                <span className="desktop-only">{user.name.split(' ')[0]}</span>
+              </button>
+              <button className="nav-btn" onClick={onSignOut} title={t.signOut}>
+                <LogOut size={17} />
+              </button>
+            </>
+          ) : (
+            <button className="signin-btn" onClick={() => onAuthRequest({ view: 'signin' })}>
+              <UserRound size={16} />
+              <span>{t.signIn}</span>
+            </button>
+          )}
+
+          {/* Cart */}
+          <button className="cart-pill" onClick={() => navigate('/cart')} title={t.cart}>
+            <ShoppingCart size={19} />
+            <span>{cartCount > 0 ? cartCount : '0'}</span>
+          </button>
+
+          {/* Mobile hamburger */}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
 
+      {/* Mobile Panel */}
       {isMenuOpen && (
         <div className="mobile-panel">
+          <button className="delivery-pill" style={{ width: '100%', justifyContent: 'flex-start' }}>
+            <MapPin size={16} color="#5d3ebc" />
+            <span>{t.deliver}: {t.location}</span>
+          </button>
           {navItems.map((item) => (
             <Link key={item.to} to={item.to} onClick={() => setIsMenuOpen(false)}>
               {item.label}
             </Link>
           ))}
+          {!user && (
+            <button className="mobile-signin" onClick={() => { onAuthRequest({ view: 'signin' }); setIsMenuOpen(false) }}>
+              <UserRound size={18} />
+              {t.signIn}
+            </button>
+          )}
+          <button
+            style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: '0.8rem 1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#111' }}
+            onClick={toggleTheme}
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
         </div>
       )}
     </nav>

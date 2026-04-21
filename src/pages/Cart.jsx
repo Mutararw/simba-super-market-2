@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react'
 
-const Cart = ({ lang }) => {
+const Cart = ({ lang, user, onAuthRequest }) => {
   const { cart, removeFromCart, updateQuantity, cartTotal } = useCart()
   const navigate = useNavigate()
 
@@ -16,7 +16,8 @@ const Cart = ({ lang }) => {
       shipping: 'Shipping',
       total: 'Total',
       checkout: 'Proceed to Checkout',
-      continue: 'Continue Shopping'
+      continue: 'Continue Shopping',
+      signinRequired: 'Sign in before checkout'
     },
     fr: {
       title: 'Votre Panier',
@@ -26,7 +27,8 @@ const Cart = ({ lang }) => {
       shipping: 'Livraison',
       total: 'Total',
       checkout: 'Passer a la Caisse',
-      continue: 'Continuer les Achats'
+      continue: 'Continuer les Achats',
+      signinRequired: 'Connectez-vous avant le paiement'
     },
     kn: {
       title: 'Ikarita yawe',
@@ -36,7 +38,8 @@ const Cart = ({ lang }) => {
       shipping: 'Kohereza',
       total: 'Igiteranyo',
       checkout: 'Komeza Kwishura',
-      continue: 'Komeza Gura'
+      continue: 'Komeza Gura',
+      signinRequired: 'Injira mbere yo kwishyura'
     }
   }
 
@@ -61,7 +64,7 @@ const Cart = ({ lang }) => {
       <div className="cart-layout" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '3rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {cart.map((item) => (
-            <div key={item.id} className="glass cart-item" style={{ display: 'flex', gap: '1.5rem', padding: '1.5rem', borderRadius: '24px', alignItems: 'center' }}>
+            <div key={item.id} className="glass cart-item" style={{ display: 'flex', gap: '1.5rem', padding: '1.5rem', borderRadius: '24px', alignItems: 'center', background: '#ffffff', color: '#111827' }}>
               <img src={item.image} alt={item.name} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '16px' }} />
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>{item.name}</h3>
@@ -83,7 +86,7 @@ const Cart = ({ lang }) => {
           ))}
         </div>
 
-        <div className="glass cart-summary" style={{ padding: '2rem', borderRadius: '32px', height: 'fit-content', position: 'sticky', top: '100px' }}>
+        <div className="glass cart-summary" style={{ padding: '2rem', borderRadius: '32px', height: 'fit-content', position: 'sticky', top: '100px', background: '#ffffff', color: '#111827' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>{t.summary}</h2>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '1.1rem' }}>
             <span>{t.subtotal}</span>
@@ -98,7 +101,18 @@ const Cart = ({ lang }) => {
             <span>{t.total}</span>
             <span style={{ color: 'var(--primary)' }}>{cartTotal.toLocaleString()} RWF</span>
           </div>
-          <button onClick={() => navigate('/checkout')} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem' }}>
+          {!user && <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>{t.signinRequired}</p>}
+          <button
+            onClick={() => {
+              if (!user) {
+                onAuthRequest({ view: 'signin', redirectTo: '/checkout' })
+                return
+              }
+              navigate('/checkout')
+            }}
+            className="btn-primary"
+            style={{ width: '100%', justifyContent: 'center', padding: '1rem' }}
+          >
             {t.checkout} <ArrowRight size={20} />
           </button>
         </div>

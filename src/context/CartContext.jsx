@@ -22,7 +22,7 @@ export const CartProvider = ({ children }) => {
 
     const timer = setTimeout(() => {
       setToast(null)
-    }, 2400)
+    }, 5000)
 
     return () => clearTimeout(timer)
   }, [toast])

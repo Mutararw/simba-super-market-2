@@ -8,55 +8,48 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className="product-card glass fade-in" style={{ 
-      borderRadius: '24px', 
+      borderRadius: '20px', 
       overflow: 'hidden', 
-      transition: 'var(--transition)',
       position: 'relative',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      background: '#ffffff'
     }}>
       <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '1/1' }}>
         <img 
           src={product.image} 
           alt={product.name} 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'var(--transition)' }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }}
+          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
         />
-        <button style={{ 
-          position: 'absolute', 
-          top: '1rem', 
-          right: '1rem', 
-          background: 'white', 
-          padding: '0.5rem', 
-          borderRadius: '50%',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          <Heart size={18} color="#ef4444" />
+        <button
+          className="card-wish-btn"
+          onClick={(e) => e.preventDefault()}
+        >
+          <Heart size={15} color="#ef4444" />
         </button>
       </div>
 
-      <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--primary)', letterSpacing: '1px' }}>
+      <div style={{ padding: '0.9rem 1rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', color: '#5d3ebc', letterSpacing: '0.8px' }}>
           {product.category}
         </span>
         <Link to={`/product/${product.id}`}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.5rem', height: '2.8rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', height: '2.5rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', color: '#111827', lineHeight: 1.3 }}>
             {product.name}
           </h3>
         </Link>
-        <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text)' }}>
-              {product.price.toLocaleString()} <span style={{ fontSize: '0.8rem' }}>RWF</span>
-            </span>
-          </div>
+        <div style={{ marginTop: 'auto', paddingTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.05rem', fontWeight: '800', color: '#111827' }}>
+            {product.price.toLocaleString()} <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>RWF</span>
+          </span>
           <button 
             onClick={() => addToCart(product)}
-            className="btn-primary" 
-            style={{ padding: '0.6rem 0.85rem', borderRadius: '12px' }}
+            className="card-add-btn"
           >
-            <Plus size={18} /> Add
+            <Plus size={16} />
+            <span>Add</span>
           </button>
         </div>
       </div>

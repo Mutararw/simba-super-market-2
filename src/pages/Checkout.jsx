@@ -3,16 +3,16 @@ import { useCart } from '../context/CartContext'
 import { Phone, CheckCircle2, Loader2, ShoppingBag } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
-const Checkout = ({ lang }) => {
+const Checkout = ({ lang, user, onAuthRequest }) => {
   const { cart, cartTotal, clearCart } = useCart()
   const [step, setStep] = useState(1)
   const [phone, setPhone] = useState('')
   const navigate = useNavigate()
 
   const translations = {
-    en: { title: 'Checkout', phone: 'Phone Number', pay: 'Pay with MoMo', success: 'Order Successful!', back: 'Back to Home', empty: 'Your cart is empty' },
-    fr: { title: 'Paiement', phone: 'Numero de Telephone', pay: 'Payer avec MoMo', success: 'Commande Reussie!', back: "Retour a l'Accueil", empty: 'Votre panier est vide' },
-    kn: { title: 'Kwishura', phone: 'Nimero ya Telefone', pay: 'Ishura na MoMo', success: 'Byagenze neza!', back: 'Subira Ahabanza', empty: 'Ikarita yawe irimo ubusa' }
+    en: { title: 'Checkout', phone: 'Phone Number', pay: 'Pay with MoMo', success: 'Order Successful!', back: 'Back to Home', empty: 'Your cart is empty', signin: 'Sign in to continue checkout' },
+    fr: { title: 'Paiement', phone: 'Numero de Telephone', pay: 'Payer avec MoMo', success: 'Commande Reussie!', back: "Retour a l'Accueil", empty: 'Votre panier est vide', signin: 'Connectez-vous pour continuer' },
+    kn: { title: 'Kwishura', phone: 'Nimero ya Telefone', pay: 'Ishura na MoMo', success: 'Byagenze neza!', back: 'Subira Ahabanza', empty: 'Ikarita yawe irimo ubusa', signin: 'Injira kugira ngo ukomeze' }
   }
 
   const t = translations[lang]
@@ -27,6 +27,18 @@ const Checkout = ({ lang }) => {
       setStep(3)
       clearCart()
     }, 2500)
+  }
+
+  if (!user) {
+    return (
+      <div className="container section-padding fade-in" style={{ textAlign: 'center' }}>
+        <ShoppingBag size={80} style={{ color: 'var(--text-muted)', marginBottom: '2rem' }} />
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>{t.signin}</h2>
+        <button className="btn-primary" onClick={() => onAuthRequest({ view: 'signin', redirectTo: '/checkout' })}>
+          Sign In
+        </button>
+      </div>
+    )
   }
 
   if (cart.length === 0 && step !== 3) {
@@ -59,7 +71,7 @@ const Checkout = ({ lang }) => {
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '3rem', textAlign: 'center' }}>{t.title}</h1>
 
-        <div className="glass" style={{ padding: '3rem', borderRadius: '32px' }}>
+        <div className="glass" style={{ padding: '3rem', borderRadius: '32px', background: '#ffffff', color: '#111827' }}>
           {step === 1 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -81,8 +93,8 @@ const Checkout = ({ lang }) => {
                       padding: '1rem 1rem 1rem 3rem',
                       borderRadius: '16px',
                       border: '1px solid var(--border)',
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
+                      background: '#ffffff',
+                      color: '#111827',
                       fontSize: '1.1rem'
                     }}
                   />
