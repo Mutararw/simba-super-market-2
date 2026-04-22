@@ -17,6 +17,7 @@ function App() {
   const [lang, setLang] = useState('en')
   const [searchQuery, setSearchQuery] = useState('')
   const [user, setUser] = useState(null)
+  const [token, setToken] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
   const [authDefaultView, setAuthDefaultView] = useState('signin')
   const [postAuthPath, setPostAuthPath] = useState(null)
@@ -35,17 +36,27 @@ function App() {
   }, [theme])
 
   useEffect(() => {
-    const stored = localStorage.getItem('simba_user')
-    if (stored) setUser(JSON.parse(stored))
+    const stored = localStorage.getItem('simba_auth')
+    if (!stored) return
+
+    try {
+      const parsed = JSON.parse(stored)
+      setUser(parsed.user || null)
+      setToken(parsed.token || '')
+    } catch (_error) {
+      localStorage.removeItem('simba_auth')
+      setUser(null)
+      setToken('')
+    }
   }, [])
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('simba_user', JSON.stringify(user))
+    if (user && token) {
+      localStorage.setItem('simba_auth', JSON.stringify({ user, token }))
     } else {
-      localStorage.removeItem('simba_user')
+      localStorage.removeItem('simba_auth')
     }
-  }, [user])
+  }, [user, token])
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
@@ -57,8 +68,9 @@ function App() {
     setAuthOpen(true)
   }
 
-  const handleAuthSuccess = (signedInUser) => {
+  const handleAuthSuccess = ({ user: signedInUser, token: userToken }) => {
     setUser(signedInUser)
+    setToken(userToken)
     setAuthOpen(false)
     if (postAuthPath) {
       navigate(postAuthPath)
@@ -68,6 +80,7 @@ function App() {
 
   const handleSignOut = () => {
     setUser(null)
+    setToken('')
     setPostAuthPath(null)
     setAuthOpen(false)
   }
@@ -110,7 +123,7 @@ function App() {
             />
             <Route
               path="/checkout"
-              element={<Checkout lang={lang} user={user} onAuthRequest={handleAuthRequest} />}
+              element={<Checkout lang={lang} user={user} token={token} onAuthRequest={handleAuthRequest} />}
             />
           </Routes>
         </main>

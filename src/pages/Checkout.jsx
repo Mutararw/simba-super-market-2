@@ -2,11 +2,14 @@ import React, { useState } from 'react'
 import { useCart } from '../context/CartContext'
 import { Phone, CheckCircle2, Loader2, ShoppingBag } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../api'
 
-const Checkout = ({ lang, user, onAuthRequest }) => {
+const Checkout = ({ lang, user, token, onAuthRequest }) => {
   const { cart, cartTotal, clearCart } = useCart()
   const [step, setStep] = useState(1)
   const [phone, setPhone] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const navigate = useNavigate()
 
   const translations = {
@@ -19,14 +22,27 @@ const Checkout = ({ lang, user, onAuthRequest }) => {
   const cleanPhone = phone.replace(/\D/g, '')
   const isPhoneValid = cleanPhone.length >= 9
 
-  const handlePayment = () => {
-    if (!isPhoneValid || cartTotal <= 0) return
+  const handlePayment = async () => {
+    if (!isPhoneValid || cartTotal <= 0 || !token) return
 
-    setStep(2)
-    setTimeout(() => {
+    const items = cart.map((item) => ({
+      productId: item.id,
+      quantity: item.quantity
+    }))
+
+    try {
+      setErrorMessage('')
+      setIsSubmitting(true)
+      setStep(2)
+      await api.createOrder({ token, items })
       setStep(3)
       clearCart()
-    }, 2500)
+    } catch (error) {
+      setStep(1)
+      setErrorMessage(error.message || 'Failed to place order')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!user) {
@@ -104,9 +120,9 @@ const Checkout = ({ lang, user, onAuthRequest }) => {
 
               <button
                 onClick={handlePayment}
-                disabled={!isPhoneValid}
+                disabled={!isPhoneValid || isSubmitting}
                 className="btn-primary"
-                style={{ width: '100%', justifyContent: 'center', padding: '1.25rem', opacity: isPhoneValid ? 1 : 0.5 }}
+                style={{ width: '100%', justifyContent: 'center', padding: '1.25rem', opacity: isPhoneValid && !isSubmitting ? 1 : 0.5 }}
               >
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/MTN_Logo.svg/1200px-MTN_Logo.svg.png"
@@ -115,6 +131,7 @@ const Checkout = ({ lang, user, onAuthRequest }) => {
                 />
                 {t.pay}
               </button>
+              {errorMessage && <small style={{ color: '#dc2626' }}>{errorMessage}</small>}
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '2rem' }}>

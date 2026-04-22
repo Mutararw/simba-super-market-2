@@ -10,7 +10,15 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     const savedCart = localStorage.getItem('simba_cart')
-    if (savedCart) setCart(JSON.parse(savedCart))
+    if (!savedCart) return
+
+    try {
+      const parsed = JSON.parse(savedCart)
+      setCart(Array.isArray(parsed) ? parsed : [])
+    } catch (_error) {
+      localStorage.removeItem('simba_cart')
+      setCart([])
+    }
   }, [])
 
   useEffect(() => {

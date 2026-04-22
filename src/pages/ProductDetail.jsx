@@ -1,17 +1,41 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import productData from '../assets/products.json'
 import { useCart } from '../context/CartContext'
 import { ArrowLeft, ShoppingCart, ShieldCheck, Truck, RotateCcw } from 'lucide-react'
+import { api } from '../api'
 
 const ProductDetail = ({ lang }) => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart } = useCart()
+  const [product, setProduct] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const product = productData.products.find((p) => p.id === parseInt(id, 10))
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true)
+        const item = await api.getProductById(id)
+        setProduct(item)
+      } catch (_error) {
+        const fallback = (productData.products || []).find((p) => Number(p.id) === Number(id))
+        if (fallback) {
+          setProduct(fallback)
+          setError('')
+        } else {
+          setError('Product not found')
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProduct()
+  }, [id])
 
-  if (!product) return <div className="container">Product not found</div>
+  if (loading) return <div className="container section-padding">Loading product...</div>
+  if (error || !product) return <div className="container section-padding">Product not found</div>
 
   const translations = {
     en: { addToCart: 'Add to Cart', inStock: 'In Stock', fastDelivery: 'Fast Delivery', securePayment: 'Secure Payment', easyReturn: '7 Days Return' },

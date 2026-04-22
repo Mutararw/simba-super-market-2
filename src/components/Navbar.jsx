@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, Sun, Moon, Languages, Menu, X, MapPin, UserRound, LogOut } from 'lucide-react'
+import { Search, ShoppingCart, Sun, Moon, Languages, Menu, X, UserRound, LogOut } from 'lucide-react'
 import { useCart } from '../context/CartContext'
+import simbaLogo from '../assets/simba-logo.png'
 
 const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery, user, onAuthRequest, onSignOut }) => {
   const { cartCount } = useCart()
@@ -54,18 +55,8 @@ const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery
 
         {/* Brand */}
         <Link to="/" className="brand-mark" onClick={() => setIsMenuOpen(false)}>
-          <div className="brand-logo">S</div>
-          <span className="brand-text">simba</span>
+          <img src={simbaLogo} alt="Simba logo" style={{ height: '42px', width: 'auto', display: 'block' }} />
         </Link>
-
-        {/* Delivery Location */}
-        <button className="delivery-pill desktop-only">
-          <MapPin size={16} color="#5d3ebc" />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
-            <span style={{ fontSize: '0.7rem', color: '#555', textTransform: 'uppercase', fontWeight: 600 }}>{t.deliver}</span>
-            <span style={{ fontSize: '0.83rem', fontWeight: 700, color: '#111' }}>{t.location}</span>
-          </div>
-        </button>
 
         {/* Search */}
         <form
@@ -112,7 +103,7 @@ const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery
             <>
               <button className="signin-btn" onClick={() => navigate('/checkout')}>
                 <UserRound size={16} />
-                <span className="desktop-only">{user.name.split(' ')[0]}</span>
+                <span className="desktop-only">{(user.name || 'Account').split(' ')[0]}</span>
               </button>
               <button className="nav-btn" onClick={onSignOut} title={t.signOut}>
                 <LogOut size={17} />
@@ -145,10 +136,6 @@ const Navbar = ({ theme, toggleTheme, lang, setLang, searchQuery, setSearchQuery
       {/* Mobile Panel */}
       {isMenuOpen && (
         <div className="mobile-panel">
-          <button className="delivery-pill" style={{ width: '100%', justifyContent: 'flex-start' }}>
-            <MapPin size={16} color="#5d3ebc" />
-            <span>{t.deliver}: {t.location}</span>
-          </button>
           {navItems.map((item) => (
             <Link key={item.to} to={item.to} onClick={() => setIsMenuOpen(false)}>
               {item.label}

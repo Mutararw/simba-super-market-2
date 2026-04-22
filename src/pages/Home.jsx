@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import productData from '../assets/products.json'
 import ProductCard from '../components/ProductCard'
-import { Filter, ChevronRight, UserRound, MapPin, Clock3, Star } from 'lucide-react'
+import { Filter, ChevronRight, UserRound, MapPin, Clock3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import food1 from '../assets/hero/food_1.png'
 import food2 from '../assets/hero/food_2.png'
 import food3 from '../assets/hero/food_3.png'
+import simbaLogo from '../assets/simba-logo.png'
+import { api } from '../api'
 
 const Home = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest }) => {
-  const [products, setProducts] = useState(productData.products)
+  const [allProducts, setAllProducts] = useState(productData.products || [])
+  const [products, setProducts] = useState(productData.products || [])
   const [category, setCategory] = useState('All')
   const [heroIndex, setHeroIndex] = useState(0)
   const heroImages = [food1, food2, food3]
 
-  const categories = ['All', ...new Set(productData.products.map((p) => p.category))]
+  const categories = ['All', ...new Set(allProducts.map((p) => p.category).filter(Boolean))]
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -67,7 +70,27 @@ const Home = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest }) => {
   const t = translations[lang]
 
   useEffect(() => {
-    let filtered = productData.products
+    const fetchProducts = async () => {
+      try {
+        const backendProducts = await api.getProducts()
+        if (Array.isArray(backendProducts) && backendProducts.length > 0) {
+          setAllProducts(backendProducts)
+          setProducts(backendProducts)
+          return
+        }
+
+        setAllProducts(productData.products || [])
+        setProducts(productData.products || [])
+      } catch (_error) {
+        setAllProducts(productData.products || [])
+        setProducts(productData.products || [])
+      }
+    }
+    fetchProducts()
+  }, [])
+
+  useEffect(() => {
+    let filtered = allProducts
 
     if (category !== 'All') {
       filtered = filtered.filter((p) => p.category === category)
@@ -78,7 +101,7 @@ const Home = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest }) => {
     }
 
     setProducts(filtered)
-  }, [category, searchQuery])
+  }, [allProducts, category, searchQuery])
 
   return (
     <div className="home-page">
@@ -109,7 +132,7 @@ const Home = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest }) => {
               transition={{ delay: 0.2 }}
             >
               <div className="badge" style={{ background: 'var(--accent)', color: '#000', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Star size={14} fill="currentColor" /> <span>Top Rated Food & Groceries</span>
+                <img src={simbaLogo} alt="Simba" className="hero-logo-badge" />
               </div>
               <h1 style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>{t.heroTitle}</h1>
               <p style={{ fontSize: '1.2rem', textShadow: '0 1px 5px rgba(0,0,0,0.3)' }}>{t.heroSub}</p>
@@ -154,63 +177,50 @@ const Home = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest }) => {
       </section>
 
       <div className="container" id="categories-section">
-        <div style={{ marginTop: '4rem', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: '800' }}>{t.categories}</h2>
-        </div>
-        <div className="categories-bar">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`category-pill ${category === cat ? 'is-active' : ''}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        <section className="trust-strip">
-          <div className="trust-card">
-            <strong>5,000+</strong>
-            <span>Happy Shoppers</span>
-          </div>
-          <div className="trust-card">
-            <strong>Same Day</strong>
-            <span>Delivery in Kigali</span>
-          </div>
-          <div className="trust-card">
-            <strong>Secure</strong>
-            <span>Safe Checkout</span>
-          </div>
-        </section>
-
-        <section className="section-padding" id="products">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t.featured}</h2>
-            <span style={{ color: 'var(--text-muted)' }}>{products.length} {t.items}</span>
-          </div>
-
-          {products.length === 0 ? (
-            <div className="glass empty-state">
-              <h3>{t.empty}</h3>
-              <button
-                className="btn-primary"
-                onClick={() => {
-                  setCategory('All')
-                  setSearchQuery('')
-                }}
-              >
-                Clear Filters
-              </button>
-            </div>
-          ) : (
-            <div className="product-grid">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+        <div className="shop-layout section-padding">
+          <aside className="categories-sidebar">
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: '#ffffff' }}>{t.categories}</h2>
+            <div className="categories-bar sidebar-categories">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`category-pill ${category === cat ? 'is-active' : ''}`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
-          )}
-        </section>
+          </aside>
+
+          <section id="products">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t.featured}</h2>
+              <span style={{ color: 'var(--text-muted)' }}>{products.length} {t.items}</span>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="glass empty-state">
+                <h3>{t.empty}</h3>
+                <button
+                  className="btn-primary"
+                  onClick={() => {
+                    setCategory('All')
+                    setSearchQuery('')
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            ) : (
+              <div className="product-grid">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   )
