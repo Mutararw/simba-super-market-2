@@ -128,7 +128,7 @@ const AuthModal = ({ open, lang, defaultView = 'signin', onClose, onAuthSuccess 
 
   return (
     <div className="auth-modal-backdrop" role="dialog" aria-modal="true">
-      <div className="auth-modal-card">
+      <div className={`auth-modal-card ${view === 'register' && accountType === 'admin' ? 'is-admin-mode' : ''}`}>
         <button className="auth-modal-close" onClick={onClose} aria-label="Close sign in modal">
           <X size={18} />
         </button>
@@ -153,7 +153,7 @@ const AuthModal = ({ open, lang, defaultView = 'signin', onClose, onAuthSuccess 
           </button>
         </div>
 
-        <div className="auth-brand-panel" aria-hidden="true">
+        <div className={`auth-brand-panel ${view === 'register' && accountType === 'admin' ? 'is-compact' : ''}`} aria-hidden="true">
           <img src={simbaLogo} alt="Simba logo" className="auth-brand-logo" />
         </div>
 
