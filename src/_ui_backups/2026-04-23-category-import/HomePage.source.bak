@@ -9,8 +9,6 @@ import food3 from '../assets/hero/food_3.png'
 import simbaLogo from '../assets/simba-logo.png'
 import { api } from '../api'
 
-const FALLBACK_CATEGORY_IMAGE = 'https://placehold.co/400x500/f58220/ffffff?text=Simba'
-
 const BRANCHES_KIGALI = [
   { id: 'remera', name: 'Simba Remera' },
   { id: 'kimironko', name: 'Simba Kimironko' },
@@ -49,36 +47,7 @@ const HomePage = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest, revi
   const reviewAreaTimerRef = useRef(null)
   const heroImages = [food1, food2, food3]
 
-  const categorySummaries = useMemo(() => {
-    const summaryMap = new Map()
-
-    for (const product of allProducts) {
-      if (!product?.category) continue
-
-      if (!summaryMap.has(product.category)) {
-        summaryMap.set(product.category, {
-          name: product.category,
-          count: 0,
-          image: product.image || FALLBACK_CATEGORY_IMAGE
-        })
-      }
-
-      const entry = summaryMap.get(product.category)
-      entry.count += 1
-      if (!entry.image && product.image) {
-        entry.image = product.image
-      }
-    }
-
-    return [
-      {
-        name: 'All',
-        count: allProducts.length,
-        image: allProducts[0]?.image || FALLBACK_CATEGORY_IMAGE
-      },
-      ...Array.from(summaryMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-    ]
-  }, [allProducts])
+  const categories = ['All', ...new Set(allProducts.map((p) => p.category).filter(Boolean))]
   const mergedReviews = useMemo(() => [...reviews, ...STATIC_REVIEWS], [reviews])
 
   useEffect(() => {
@@ -135,45 +104,33 @@ const HomePage = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest, revi
       heroSub: 'Pick your essentials, keep your cart ready, and sign in now or at checkout.',
       featured: 'Featured Products',
       categories: 'Shop by Category',
-      categorySub: 'Browse the same visual category experience with hover explore and product counts.',
       empty: 'No products found for your search.',
       startOrder: 'Start your order',
       signin: 'Sign in first',
       continueAsGuest: 'Continue as guest',
-      items: 'products found',
-      categoryItems: 'items',
-      explore: 'Explore',
-      clearFilters: 'Clear Filters'
+      items: 'products found'
     },
     fr: {
       heroTitle: 'Vos courses en minutes, livrees rapidement',
       heroSub: 'Ajoutez des articles, puis connectez-vous maintenant ou au paiement.',
       featured: 'Produits Vedettes',
       categories: 'Acheter par Categorie',
-      categorySub: 'Parcourez les categories avec effet hover, bouton Explore et compteur de produits.',
       empty: 'Aucun produit trouve pour cette recherche.',
       startOrder: 'Commencer la commande',
       signin: 'Se connecter',
       continueAsGuest: 'Continuer en invite',
-      items: 'produits trouves',
-      categoryItems: 'articles',
-      explore: 'Explorer',
-      clearFilters: 'Effacer les filtres'
+      items: 'produits trouves'
     },
     kn: {
       heroTitle: 'Ibiribwa mu minota mike, byihuse',
       heroSub: 'Ongeramo ibicuruzwa, winjire ubu cyangwa igihe cyo kwishyura.',
       featured: 'Ibicuruzwa Byatoranijwe',
       categories: 'Gura ukurikije Icyiciro',
-      categorySub: 'Hitamo ibyiciro ukoresheje amakarita afite hover, Explore n umubare w ibicuruzwa.',
       empty: 'Nta bicuruzwa bibonetse kuri iri shakisha.',
       startOrder: 'Tangira gutumiza',
       signin: 'Injira mbere',
       continueAsGuest: 'Komeza nk umushyitsi',
-      items: 'ibicuruzwa byabonetse',
-      categoryItems: 'ibintu',
-      explore: 'Reba',
-      clearFilters: 'Kuraho filitiri'
+      items: 'ibicuruzwa byabonetse'
     }
   }
 
@@ -432,69 +389,28 @@ const HomePage = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest, revi
       </section>
 
       <div className="container" id="categories-section">
-        <div className="section-padding">
-          <section className="category-showcase">
-            <div className="category-showcase-header">
-              <div>
-                <h2 className="category-showcase-title">{t.categories}</h2>
-                <p className="category-showcase-subtitle">{t.categorySub}</p>
-              </div>
-              <span className="category-showcase-count">{categorySummaries.length - 1} categories · {allProducts.length} products</span>
-            </div>
-
-            <div className="category-showcase-grid">
-              {categorySummaries.map((entry) => (
-                <button
-                  key={entry.name}
-                  type="button"
-                  onClick={() => setCategory(entry.name)}
-                  className={`category-showcase-card ${category === entry.name ? 'is-active' : ''}`}
-                >
-                  <img
-                    src={entry.image || FALLBACK_CATEGORY_IMAGE}
-                    alt={entry.name}
-                    className="category-showcase-image"
-                    onError={(event) => {
-                      event.currentTarget.src = FALLBACK_CATEGORY_IMAGE
-                    }}
-                  />
-                  <div className="category-showcase-overlay" />
-                  <div className="category-showcase-content">
-                    <span className="category-showcase-meta">{entry.count} {t.categoryItems}</span>
-                    <strong className="category-showcase-name">{entry.name}</strong>
-                    <span className="category-showcase-cta">
-                      {t.explore} <ChevronRight size={14} />
-                    </span>
-                  </div>
+        <div className="shop-layout section-padding">
+          <aside className="categories-sidebar">
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: '#ffffff' }}>{t.categories}</h2>
+            <div className="categories-bar sidebar-categories">
+              {categories.map((cat) => (
+                <button key={cat} onClick={() => setCategory(cat)} className={`category-pill ${category === cat ? 'is-active' : ''}`}>
+                  {cat}
                 </button>
               ))}
             </div>
-          </section>
+          </aside>
 
-          <section id="products" className="category-results-panel">
-            <div className="category-results-header">
-              <div>
-                <h2 className="category-results-title">{category === 'All' ? t.featured : category}</h2>
-                <p className="category-results-subtitle">{products.length} {t.items}</p>
-              </div>
-              {(category !== 'All' || searchQuery) && (
-                <button
-                  type="button"
-                  className="category-reset-btn"
-                  onClick={() => {
-                    setCategory('All')
-                    setSearchQuery('')
-                  }}
-                >
-                  {t.clearFilters}
-                </button>
-              )}
+          <section id="products">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: '800' }}>{t.featured}</h2>
+              <span style={{ color: 'var(--text-muted)' }}>{products.length} {t.items}</span>
             </div>
 
             {products.length === 0 ? (
               <div className="glass empty-state">
                 <h3>{t.empty}</h3>
-                <button className="btn-primary" onClick={() => { setCategory('All'); setSearchQuery('') }}>{t.clearFilters}</button>
+                <button className="btn-primary" onClick={() => { setCategory('All'); setSearchQuery('') }}>Clear Filters</button>
               </div>
             ) : (
               <div className="product-grid">

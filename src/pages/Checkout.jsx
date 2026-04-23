@@ -1,95 +1,161 @@
 import React, { useEffect, useState } from 'react'
-import { useCart } from '../context/CartContext'
-import { Phone, CheckCircle2, Loader2, ShoppingBag, MapPin, Clock, CreditCard, ChevronRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { CheckCircle2, CreditCard, MapPin, Phone, ShoppingBag } from 'lucide-react'
+import { useCart } from '../context/CartContext'
 import { api } from '../api'
 
-const BRANCHES = [
-  { id: 'remera', name: 'Simba Supermarket Remera', area: 'Gasabo' },
-  { id: 'kimironko', name: 'Simba Supermarket Kimironko', area: 'Gasabo' },
-  { id: 'kacyiru', name: 'Simba Supermarket Kacyiru', area: 'Gasabo' },
-  { id: 'nyamirambo', name: 'Simba Supermarket Nyamirambo', area: 'Nyarugenge' },
-  { id: 'gikondo', name: 'Simba Supermarket Gikondo', area: 'Kicukiro' },
-  { id: 'kanombe', name: 'Simba Supermarket Kanombe', area: 'Kicukiro' },
-  { id: 'kinyinya', name: 'Simba Supermarket Kinyinya', area: 'Gasabo' },
-  { id: 'kibagabaga', name: 'Simba Supermarket Kibagabaga', area: 'Gasabo' },
-  { id: 'nyanza', name: 'Simba Supermarket Nyanza', area: 'Kicukiro' }
-]
+const BRANCHES = ['Simba Remera', 'Simba Kimironko', 'Simba Kacyiru', 'Simba Nyamirambo', 'Simba Gikondo', 'Simba Kanombe']
 
-const TIMES = [
-  'As soon as possible (15-30 min)',
-  'In 1 hour',
-  'In 2 hours',
-  'Later today',
-  'Tomorrow morning'
-]
+const formatRWF = (amount) =>
+  new Intl.NumberFormat('en-RW', {
+    style: 'currency',
+    currency: 'RWF',
+    maximumFractionDigits: 0
+  }).format(amount)
 
 const Checkout = ({ lang, user, token, onAuthRequest, onReviewPromptOpen }) => {
   const { cart, cartTotal, clearCart } = useCart()
-  const [step, setStep] = useState(1) // 1: Details, 2: Payment, 3: Success
-  const [selectedBranch, setSelectedBranch] = useState('')
-  const [selectedTime, setSelectedTime] = useState('')
+  const navigate = useNavigate()
+  const [done, setDone] = useState(false)
+  const [orderRef, setOrderRef] = useState('')
+  const [name, setName] = useState(user?.name ?? '')
   const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [branch, setBranch] = useState('Simba Remera')
+  const [payment, setPayment] = useState('momo')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const navigate = useNavigate()
 
-  const DEPOSIT_AMOUNT = 500 // Small MoMo deposit in RWF
-
-  useEffect(() => {
-    if (step !== 3) return
-
-    const timer = window.setTimeout(() => {
-      onReviewPromptOpen?.('checkout-success')
-    }, 900)
-
-    return () => window.clearTimeout(timer)
-  }, [step, onReviewPromptOpen])
+  const delivery = cartTotal >= 30000 ? 0 : 2500
+  const total = cartTotal + delivery
 
   const translations = {
-    en: { 
-      title: 'Quick Pick-up Checkout', 
-      phone: 'Momo Phone Number', 
-      pay: 'Pay Deposit with MoMo', 
-      success: 'Pick-up Confirmed!', 
-      back: 'Back to Home', 
-      empty: 'Your cart is empty', 
-      signin: 'Sign in to continue checkout',
-      selectBranch: 'Select Pick-up Branch',
-      selectTime: 'Select Pick-up Time',
-      depositInfo: 'Pay a small deposit now to confirm your order. Pay the balance at the branch.'
+    en: {
+      title: 'Checkout',
+      nothingTitle: 'Nothing to checkout',
+      startShopping: 'Start shopping',
+      deliveryDetails: 'Delivery details',
+      fullName: 'Full name',
+      phone: 'Phone',
+      address: 'Address',
+      pickupBranch: 'Pickup branch',
+      payment: 'Payment',
+      orderTitle: 'Your order',
+      subtotal: 'Subtotal',
+      delivery: 'Delivery',
+      free: 'Free',
+      total: 'Total',
+      placeOrder: 'Place order',
+      orderConfirmed: 'Order confirmed!',
+      orderThanksPrefix: 'Thanks',
+      orderThanksFallback: 'for shopping',
+      continueShopping: 'Continue shopping',
+      signInToCheckout: 'Sign in to continue checkout',
+      emptyCart: 'Your cart is empty',
+      moreForFreeDelivery: 'more for free delivery.',
+      addressPlaceholder: 'Street, area, landmark...',
+      phonePlaceholder: '+250...',
+      mobileMoney: 'Mobile Money (MTN / Airtel)',
+      card: 'Credit / Debit Card',
+      cod: 'Cash on Delivery'
     },
-    // Add other languages if needed, keeping it simple for now
+    fr: {
+      title: 'Paiement',
+      nothingTitle: 'Rien a payer',
+      startShopping: 'Commencer vos achats',
+      deliveryDetails: 'Details de livraison',
+      fullName: 'Nom complet',
+      phone: 'Telephone',
+      address: 'Adresse',
+      pickupBranch: 'Agence de retrait',
+      payment: 'Paiement',
+      orderTitle: 'Votre commande',
+      subtotal: 'Sous-total',
+      delivery: 'Livraison',
+      free: 'Gratuite',
+      total: 'Total',
+      placeOrder: 'Passer la commande',
+      orderConfirmed: 'Commande confirmee !',
+      orderThanksPrefix: 'Merci',
+      orderThanksFallback: 'pour vos achats',
+      continueShopping: 'Continuer les achats',
+      signInToCheckout: 'Connectez-vous pour continuer',
+      emptyCart: 'Votre panier est vide',
+      moreForFreeDelivery: 'de plus pour la livraison gratuite.',
+      addressPlaceholder: 'Rue, quartier, point de repere...',
+      phonePlaceholder: '+250...',
+      mobileMoney: 'Mobile Money (MTN / Airtel)',
+      card: 'Carte bancaire',
+      cod: 'Paiement a la livraison'
+    },
+    kn: {
+      title: 'Kwishyura',
+      nothingTitle: 'Nta cyo kwishyura',
+      startShopping: 'Tangira guhaha',
+      deliveryDetails: 'Aho bizagezwa',
+      fullName: 'Amazina yose',
+      phone: 'Telefone',
+      address: 'Aderesi',
+      pickupBranch: 'Ishami ryo gufatiraho',
+      payment: 'Uburyo bwo kwishyura',
+      orderTitle: 'Itegeko ryawe',
+      subtotal: 'Igiteranyo fatizo',
+      delivery: 'Kohereza',
+      free: 'Ubuntu',
+      total: 'Igiteranyo',
+      placeOrder: 'Emeza itegeko',
+      orderConfirmed: 'Itegeko ryemejwe!',
+      orderThanksPrefix: 'Murakoze',
+      orderThanksFallback: 'guhaha',
+      continueShopping: 'Komeza guhaha',
+      signInToCheckout: 'Banza winjire ngo ukomeze',
+      emptyCart: 'Ikarita yawe irimo ubusa',
+      moreForFreeDelivery: 'zisigaye kugira ngo woherezwe ubuntu.',
+      addressPlaceholder: 'Umuhanda, agace, ikimenyetso...',
+      phonePlaceholder: '+250...',
+      mobileMoney: 'Mobile Money (MTN / Airtel)',
+      card: 'Ikarita ya banki',
+      cod: 'Kwishyura bakuzaniye'
+    }
   }
 
   const t = translations[lang] || translations.en
-  const cleanPhone = phone.replace(/\D/g, '')
-  const isPhoneValid = cleanPhone.length >= 9 && cleanPhone.startsWith('07')
 
-  const handlePayment = async () => {
-    if (!isPhoneValid || !selectedBranch || !selectedTime || !token) return
+  useEffect(() => {
+    if (done) {
+      const timer = window.setTimeout(() => {
+        onReviewPromptOpen?.('checkout-success')
+      }, 900)
 
-    const items = cart.map((item) => ({
-      productId: item.id,
-      quantity: item.quantity
-    }))
+      return () => window.clearTimeout(timer)
+    }
+  }, [done, onReviewPromptOpen])
+
+  useEffect(() => {
+    setName(user?.name ?? '')
+  }, [user])
+
+  const submit = async (event) => {
+    event.preventDefault()
+
+    if (!user || !token) {
+      onAuthRequest?.({ view: 'signin', redirectTo: '/checkout' })
+      return
+    }
 
     try {
       setErrorMessage('')
       setIsSubmitting(true)
-      // Simulate API call for order creation with branch/time metadata
-      await api.createOrder({ 
-        token, 
-        items, 
-        metadata: { 
-          type: 'pickup', 
-          branch: selectedBranch, 
-          time: selectedTime,
-          deposit: DEPOSIT_AMOUNT 
-        } 
+      await api.createOrder({
+        token,
+        items: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity
+        }))
       })
-      setStep(3)
+      setOrderRef(`SIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`)
       clearCart()
+      setDone(true)
     } catch (error) {
       setErrorMessage(error.message || 'Failed to place order')
     } finally {
@@ -99,208 +165,159 @@ const Checkout = ({ lang, user, token, onAuthRequest, onReviewPromptOpen }) => {
 
   if (!user) {
     return (
-      <div className="container section-padding fade-in" style={{ textAlign: 'center' }}>
-        <ShoppingBag size={80} style={{ color: 'var(--text-muted)', marginBottom: '2rem' }} />
-        <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>{t.signin}</h2>
-        <button className="btn-primary" onClick={() => onAuthRequest({ view: 'signin', redirectTo: '/checkout' })}>
-          Sign In
+      <div className="simba-checkout-empty-wrap">
+        <div className="simba-checkout-empty-icon">
+          <ShoppingBag size={40} />
+        </div>
+        <h1 className="simba-checkout-empty-title">{t.signInToCheckout}</h1>
+        <button className="simba-checkout-primary-btn" onClick={() => onAuthRequest?.({ view: 'signin', redirectTo: '/checkout' })}>
+          {t.startShopping}
         </button>
       </div>
     )
   }
 
-  if (cart.length === 0 && step !== 3) {
+  if (cart.length === 0 && !done) {
     return (
-      <div className="container section-padding fade-in" style={{ textAlign: 'center' }}>
-        <ShoppingBag size={80} style={{ color: 'var(--text-muted)', marginBottom: '2rem' }} />
-        <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>{t.empty}</h2>
-        <Link to="/" className="btn-primary">
-          Continue Shopping
+      <div className="simba-checkout-empty-wrap">
+        <div className="simba-checkout-empty-icon">
+          <ShoppingBag size={40} />
+        </div>
+        <h1 className="simba-checkout-empty-title">{t.nothingTitle}</h1>
+        <p className="simba-checkout-empty-text">{t.emptyCart}</p>
+        <Link to="/" className="simba-checkout-primary-btn">
+          {t.startShopping}
         </Link>
       </div>
     )
   }
 
-  if (step === 3) {
-    const branchName = BRANCHES.find(b => b.id === selectedBranch)?.name
+  if (done) {
     return (
-      <div className="container section-padding fade-in" style={{ textAlign: 'center', maxWidth: '800px' }}>
-        <div className="glass" style={{ padding: '4rem', borderRadius: '40px', background: 'white' }}>
-          <CheckCircle2 size={100} color="#22c55e" style={{ marginBottom: '2rem' }} />
-          <h1 style={{ fontSize: '3.5rem', fontWeight: '900', marginBottom: '1rem', color: '#111827' }}>Ready for Pick-up!</h1>
-          <p style={{ fontSize: '1.2rem', color: '#4b5563', marginBottom: '3rem' }}>
-            Your order has been sent to <strong>{branchName}</strong>. <br/>
-            The staff is already preparing your items. See you in <strong>{selectedTime}</strong>!
-          </p>
-          
-          <div style={{ background: '#f8fafc', padding: '2rem', borderRadius: '24px', textAlign: 'left', marginBottom: '3rem', border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <MapPin className="text-primary" />
-              <div>
-                <strong style={{ display: 'block', color: '#111827' }}>Pick-up Location</strong>
-                <span style={{ color: '#64748b' }}>{branchName}</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <Clock className="text-primary" />
-              <div>
-                <strong style={{ display: 'block', color: '#111827' }}>Scheduled Time</strong>
-                <span style={{ color: '#64748b' }}>{selectedTime}</span>
-              </div>
-            </div>
-          </div>
-
-          <button onClick={() => navigate('/')} className="btn-primary" style={{ width: '100%', py: '1.5rem' }}>
-            {t.back}
-          </button>
+      <div className="simba-checkout-success-wrap">
+        <div className="simba-checkout-success-icon">
+          <CheckCircle2 size={40} />
         </div>
+        <h1 className="simba-checkout-success-title">{t.orderConfirmed}</h1>
+        <p className="simba-checkout-success-text">
+          {t.orderThanksPrefix} {name || t.orderThanksFallback}. Your order <span className="simba-checkout-order-ref">{orderRef}</span> is on its way.
+        </p>
+        <button type="button" className="simba-checkout-primary-btn simba-checkout-success-btn" onClick={() => navigate('/')}>
+          {t.continueShopping}
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="container section-padding fade-in">
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h1 style={{ fontSize: '3.5rem', fontWeight: '900', color: '#111827', marginBottom: '1rem' }}>{t.title}</h1>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', alignItems: 'center', color: 'var(--primary)', fontWeight: '700' }}>
-            <ShoppingBag size={20} />
-            <span>Kigali Direct Service</span>
-          </div>
-        </div>
+    <div className="simba-checkout-page">
+      <div className="simba-checkout-shell">
+        <h1 className="simba-checkout-heading">{t.title}</h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem' }}>
-          {/* Left Column: Selection */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-            {/* Step 1: Branch */}
-            <div className="glass" style={{ padding: '2.5rem', borderRadius: '32px', background: 'white' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <MapPin className="text-primary" /> {t.selectBranch}
+        <form onSubmit={submit} className="simba-checkout-grid">
+          <div className="simba-checkout-main">
+            <section className="simba-checkout-section">
+              <h2 className="simba-checkout-section-title">
+                <MapPin size={20} className="simba-checkout-section-icon" /> {t.deliveryDetails}
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                {BRANCHES.map(branch => (
-                  <button
-                    key={branch.id}
-                    onClick={() => setSelectedBranch(branch.id)}
-                    style={{
-                      padding: '1.2rem',
-                      borderRadius: '16px',
-                      border: selectedBranch === branch.id ? '2px solid var(--primary)' : '1px solid #e2e8f0',
-                      background: selectedBranch === branch.id ? '#fff7ed' : 'white',
-                      textAlign: 'left',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <strong style={{ display: 'block', color: selectedBranch === branch.id ? 'var(--primary)' : '#111827', fontSize: '0.95rem' }}>{branch.name}</strong>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{branch.area}</span>
-                  </button>
+
+              <div className="simba-checkout-two-col">
+                <div className="simba-checkout-field">
+                  <label htmlFor="checkout-name">{t.fullName}</label>
+                  <input id="checkout-name" required value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+
+                <div className="simba-checkout-field">
+                  <label htmlFor="checkout-phone">{t.phone}</label>
+                  <input id="checkout-phone" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t.phonePlaceholder} />
+                </div>
+              </div>
+
+              <div className="simba-checkout-field">
+                <label htmlFor="checkout-address">{t.address}</label>
+                <textarea id="checkout-address" required value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t.addressPlaceholder} />
+              </div>
+
+              <div className="simba-checkout-field">
+                <label htmlFor="checkout-branch">{t.pickupBranch}</label>
+                <select id="checkout-branch" value={branch} onChange={(e) => setBranch(e.target.value)}>
+                  {BRANCHES.map((branchName) => (
+                    <option key={branchName} value={branchName}>
+                      {branchName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </section>
+
+            <section className="simba-checkout-section">
+              <h2 className="simba-checkout-section-title">
+                <CreditCard size={20} className="simba-checkout-section-icon" /> {t.payment}
+              </h2>
+
+              <div className="simba-checkout-payment-list">
+                {[
+                  { id: 'momo', label: t.mobileMoney, Icon: Phone },
+                  { id: 'card', label: t.card, Icon: CreditCard },
+                  { id: 'cod', label: t.cod, Icon: MapPin }
+                ].map(({ id, label, Icon }) => (
+                  <label key={id} htmlFor={`payment-${id}`} className={`simba-checkout-payment-option ${payment === id ? 'is-active' : ''}`}>
+                    <input id={`payment-${id}`} type="radio" name="payment" value={id} checked={payment === id} onChange={(e) => setPayment(e.target.value)} />
+                    <Icon size={20} className="simba-checkout-payment-icon" />
+                    <span>{label}</span>
+                  </label>
                 ))}
               </div>
-            </div>
-
-            {/* Step 2: Time */}
-            <div className="glass" style={{ padding: '2.5rem', borderRadius: '32px', background: 'white' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <Clock className="text-primary" /> {t.selectTime}
-              </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                {TIMES.map(time => (
-                  <button
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    style={{
-                      padding: '0.8rem 1.5rem',
-                      borderRadius: '100px',
-                      border: selectedTime === time ? '2px solid var(--primary)' : '1px solid #e2e8f0',
-                      background: selectedTime === time ? 'var(--primary)' : 'white',
-                      color: selectedTime === time ? 'white' : '#111827',
-                      fontWeight: '700',
-                      fontSize: '0.9rem',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            </div>
+            </section>
           </div>
 
-          {/* Right Column: Order & Payment */}
-          <div style={{ position: 'sticky', top: '120px', height: 'fit-content' }}>
-            <div className="glass" style={{ padding: '2.5rem', borderRadius: '32px', background: 'white', boxShadow: '0 30px 60px rgba(0,0,0,0.08)' }}>
-              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '2rem', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <span style={{ color: '#64748b' }}>Order Total</span>
-                  <span style={{ fontWeight: '700' }}>{cartTotal.toLocaleString()} RWF</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--primary)', fontWeight: '800', fontSize: '1.2rem' }}>
-                  <span>MoMo Deposit</span>
-                  <span>{DEPOSIT_AMOUNT} RWF</span>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '1rem' }}>
-                  * This small deposit prevents no-shows. Pay the rest ({ (cartTotal - DEPOSIT_AMOUNT).toLocaleString() } RWF) at the branch.
-                </p>
-              </div>
+          <aside className="simba-checkout-summary">
+            <h2 className="simba-checkout-summary-title">{t.orderTitle}</h2>
 
-              <div style={{ marginBottom: '2rem' }}>
-                <label style={{ display: 'block', fontWeight: '700', marginBottom: '0.8rem', color: '#111827' }}>{t.phone}</label>
-                <div style={{ position: 'relative' }}>
-                  <Phone size={18} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input
-                    type="tel"
-                    placeholder="078X XXX XXX"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '1.2rem 1.2rem 1.2rem 3.5rem',
-                      borderRadius: '16px',
-                      border: '1px solid #e2e8f0',
-                      fontSize: '1.1rem',
-                      outline: 'none'
-                    }}
-                  />
+            <div className="simba-checkout-order-list">
+              {cart.map((item) => (
+                <div key={item.id} className="simba-checkout-order-item">
+                  <img src={item.image} alt={item.name} className="simba-checkout-order-image" />
+                  <div className="simba-checkout-order-info">
+                    <div className="simba-checkout-order-name">{item.name}</div>
+                    <div className="simba-checkout-order-meta">
+                      {item.quantity} x {formatRWF(item.price)}
+                    </div>
+                  </div>
+                  <div className="simba-checkout-order-total">{formatRWF(item.price * item.quantity)}</div>
                 </div>
-              </div>
-
-              <button
-                onClick={handlePayment}
-                disabled={!isPhoneValid || !selectedBranch || !selectedTime || isSubmitting}
-                className="btn-primary"
-                style={{ 
-                  width: '100%', 
-                  justifyContent: 'center', 
-                  padding: '1.5rem', 
-                  fontSize: '1.2rem',
-                  opacity: (!isPhoneValid || !selectedBranch || !selectedTime || isSubmitting) ? 0.5 : 1
-                }}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="spinner" />
-                ) : (
-                  <>
-                    <img
-                      src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/MTN_Logo.svg/1200px-MTN_Logo.svg.png"
-                      alt="MoMo"
-                      style={{ height: '24px', marginRight: '0.8rem' }}
-                    />
-                    {t.pay}
-                  </>
-                )}
-              </button>
-
-              {errorMessage && <p style={{ color: '#dc2626', marginTop: '1rem', textAlign: 'center' }}>{errorMessage}</p>}
-              
-              {!selectedBranch && <p style={{ color: '#f59e0b', fontSize: '0.85rem', marginTop: '1.5rem', textAlign: 'center' }}>Please select a branch first.</p>}
+              ))}
             </div>
-          </div>
-        </div>
+
+            <div className="simba-checkout-summary-rows">
+              <div className="simba-checkout-summary-row">
+                <span>{t.subtotal}</span>
+                <span>{formatRWF(cartTotal)}</span>
+              </div>
+              <div className="simba-checkout-summary-row">
+                <span>{t.delivery}</span>
+                <span>{delivery === 0 ? t.free : formatRWF(delivery)}</span>
+              </div>
+              {delivery > 0 && (
+                <div className="simba-checkout-delivery-note">
+                  Add {formatRWF(30000 - cartTotal)} {t.moreForFreeDelivery}
+                </div>
+              )}
+            </div>
+
+            <div className="simba-checkout-total-row">
+              <span>{t.total}</span>
+              <span>{formatRWF(total)}</span>
+            </div>
+
+            {errorMessage && <p className="simba-checkout-error">{errorMessage}</p>}
+
+            <button type="submit" className="simba-checkout-primary-btn simba-checkout-submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? 'Processing...' : t.placeOrder}
+            </button>
+          </aside>
+        </form>
       </div>
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .spinner { animation: spin 1s linear infinite; }
-      `}</style>
     </div>
   )
 }
