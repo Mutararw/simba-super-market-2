@@ -1,3 +1,16 @@
+# Node modules
 node_modules/
-dist/
-.vite/
+client/node_modules/
+server/node_modules/
+
+# Environment variables
+.env
+client/.env
+server/.env
+
+# Build outputs
+client/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
