@@ -200,6 +200,25 @@ const HomePage = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest, revi
     setLikedReviews((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
+  const reviewsGridRef = useRef(null)
+
+  useEffect(() => {
+    const grid = reviewsGridRef.current
+    if (!grid || reviewPromptState?.hasReviewed) return
+
+    const handleScroll = () => {
+      if (reviewPromptState?.hasReviewed) return
+      
+      const isAtEnd = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 50
+      if (isAtEnd && !reviewPromptState?.hasSeen) {
+        onReviewPromptOpen?.('review-finished-reading')
+      }
+    }
+
+    grid.addEventListener('scroll', handleScroll)
+    return () => grid.removeEventListener('scroll', handleScroll)
+  }, [reviewPromptState?.hasReviewed, reviewPromptState?.hasSeen, onReviewPromptOpen])
+
   const clearReviewTimers = () => {
     if (reviewPromptTimerRef.current) {
       window.clearTimeout(reviewPromptTimerRef.current)
@@ -217,7 +236,7 @@ const HomePage = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest, revi
     reviewAreaTimerRef.current = window.setTimeout(() => {
       reviewAreaTimerRef.current = null
       onReviewPromptOpen?.('review-dwell')
-    }, 30000)
+    }, 20000)
   }
 
   const stopInitialReviewTimer = () => {
@@ -515,7 +534,13 @@ const HomePage = ({ lang, user, searchQuery, setSearchQuery, onAuthRequest, revi
             <p className="reviews-subtitle">Real experiences from Simba Supermarket shoppers across Kigali.</p>
           </div>
 
-          <div className="reviews-grid" onMouseEnter={startInitialReviewTimer} onMouseLeave={stopInitialReviewTimer}>
+          <div 
+            ref={reviewsGridRef}
+            className=\"reviews-grid\" 
+            onMouseEnter={startInitialReviewTimer} 
+            onMouseLeave={stopInitialReviewTimer}
+            style={{ overflowX: 'auto', scrollSnapType: 'x mandatory' }}
+          >
             {mergedReviews.map((review) => (
               <motion.div
                 key={review.id}

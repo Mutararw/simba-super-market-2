@@ -1052,6 +1052,7 @@ button {
   flex-direction: column;
   gap: 1.5rem;
   margin-bottom: 2.5rem;
+  padding-left: 2rem;
 }
 
 .category-showcase-header {
@@ -1186,6 +1187,7 @@ button {
   border-radius: 28px;
   padding: 1.4rem;
   box-shadow: var(--shadow);
+  margin-left: 2rem;
 }
 
 .category-results-header {
@@ -2639,6 +2641,14 @@ button {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .category-showcase {
+    padding-left: 1rem;
+  }
+
+  .category-results-panel {
+    margin-left: 1rem;
+  }
+
   .simba-cart-grid {
     grid-template-columns: 1fr;
   }
@@ -2678,6 +2688,11 @@ button {
 
   .category-results-panel {
     padding: 1rem;
+    margin-left: 0;
+  }
+
+  .category-showcase {
+    padding-left: 0;
   }
 
   .simba-cart-page {

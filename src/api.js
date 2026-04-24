@@ -1,6 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+const API_BASE_URL = 'https://simba-backend-1-givj.onrender.com/api'
 
 const request = async (path, options = {}) => {
+  console.log(`API Request: ${API_BASE_URL}${path}`);
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
@@ -10,14 +11,18 @@ const request = async (path, options = {}) => {
   })
 
   let data = null
+  let rawText = ''
   try {
-    data = await response.json()
+    rawText = await response.text()
+    data = JSON.parse(rawText)
   } catch (_error) {
     data = null
   }
 
   if (!response.ok) {
-    const message = data?.message || `Request failed with status ${response.status}`
+    const message = data?.error 
+      ? `${data.message}: ${data.error}` 
+      : (data?.message || `Request failed (${response.status}): ${rawText.substring(0, 100)}`)
     throw new Error(message)
   }
 

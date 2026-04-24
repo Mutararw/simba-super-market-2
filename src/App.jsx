@@ -5,6 +5,7 @@ import Footer from './components/Footer'
 import CartToast from './components/CartToast'
 import AuthModal from './components/AuthModal'
 import ReviewPrompt from './components/ReviewPrompt'
+import ReviewSurprise from './components/ReviewSurprise'
 import Home from './pages/HomePage'
 import ProductDetail from './pages/ProductDetail'
 import Checkout from './pages/Checkout'
@@ -29,6 +30,7 @@ function App() {
   const [userReviews, setUserReviews] = useState([])
   const [reviewPrompt, setReviewPrompt] = useState({ open: false, source: null })
   const [reviewPromptState, setReviewPromptState] = useState({ hasSeen: false, hasReviewed: false })
+  const [surpriseOpen, setSurpriseOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   
@@ -157,6 +159,11 @@ function App() {
     setUserReviews((currentReviews) => [review, ...currentReviews])
     setReviewPromptState({ hasSeen: true, hasReviewed: true })
     closeReviewPrompt()
+    
+    // Trigger the surprise thank you effect
+    setTimeout(() => {
+      setSurpriseOpen(true)
+    }, 400)
   }
 
   return (
@@ -228,6 +235,10 @@ function App() {
           user={user}
           onClose={closeReviewPrompt}
           onSubmit={handleReviewSubmit}
+        />
+        <ReviewSurprise 
+          open={surpriseOpen} 
+          onClose={() => setSurpriseOpen(false)} 
         />
       </div>
     </CartProvider>
