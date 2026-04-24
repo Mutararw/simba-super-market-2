@@ -157,9 +157,10 @@ const Checkout = ({ lang, user, token, onAuthRequest, onReviewPromptOpen }) => {
       clearCart()
       setDone(true)
     } catch (error) {
-      setErrorMessage(error.message || 'Failed to place order')
-    } finally {
+      console.error('Checkout error:', error);
+      setErrorMessage(error.toString())
       setIsSubmitting(false)
+    }
     }
   }
 
